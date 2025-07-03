@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Home, 
@@ -38,9 +37,10 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ userRole }: AppSidebarProps) {
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
   const location = useLocation();
   const currentPath = location.pathname;
+  const isCollapsed = state === "collapsed";
 
   const shopOwnerItems = [
     { title: "Dashboard", url: "/dashboard/shop-owner", icon: Home },
@@ -68,9 +68,9 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
     isActive ? "bg-muted text-primary font-medium" : "hover:bg-muted/50";
 
   return (
-    <Sidebar className={collapsed ? "w-14" : "w-60"} collapsible>
+    <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
-        {!collapsed && (
+        {!isCollapsed && (
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">TG</span>
@@ -97,7 +97,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
                   <SidebarMenuButton asChild>
                     <NavLink to={item.url} end className={getNavCls}>
                       <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!isCollapsed && <span>{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -114,7 +114,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
                 <SidebarMenuButton asChild>
                   <NavLink to="/community" className={getNavCls}>
                     <MessageSquare className="mr-2 h-4 w-4" />
-                    {!collapsed && <span>Community Feed</span>}
+                    {!isCollapsed && <span>Community Feed</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -129,7 +129,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
             <SidebarMenuButton asChild>
               <NavLink to="/settings" className={getNavCls}>
                 <Settings className="mr-2 h-4 w-4" />
-                {!collapsed && <span>Settings</span>}
+                {!isCollapsed && <span>Settings</span>}
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -137,7 +137,7 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
             <SidebarMenuButton asChild>
               <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50">
                 <LogOut className="mr-2 h-4 w-4" />
-                {!collapsed && <span>Logout</span>}
+                {!isCollapsed && <span>Logout</span>}
               </Button>
             </SidebarMenuButton>
           </SidebarMenuItem>
