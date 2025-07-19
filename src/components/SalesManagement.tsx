@@ -12,7 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface Sale {
   id: string;
@@ -346,7 +346,7 @@ export const SalesManagement = () => {
       `₹${item.total.toFixed(2)}`
     ]);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: tableStartY,
       head: [['#', 'Item Description', 'Qty', 'Unit Price', 'Amount']],
       body: tableData,
@@ -376,7 +376,7 @@ export const SalesManagement = () => {
     });
 
     // Totals section
-    const finalY = (doc as any).lastAutoTable.finalY + 20;
+    const finalY = (doc as any).previousAutoTable.finalY + 20;
     const totalsX = pageWidth - 80;
     
     // Totals background
