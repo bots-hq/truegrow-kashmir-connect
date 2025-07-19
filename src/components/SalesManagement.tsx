@@ -262,24 +262,84 @@ export const SalesManagement = () => {
   const generatePDF = (sale: Sale) => {
     const doc = new jsPDF();
     const items = JSON.parse(sale.items);
+    const pageWidth = doc.internal.pageSize.width;
     
-    // Header
-    doc.setFontSize(20);
-    doc.text('INVOICE', 105, 20, { align: 'center' });
+    // Set colors
+    const primaryColor = '#22c55e'; // Green
+    const textColor = '#374151'; // Gray
+    const lightGray = '#f3f4f6';
     
-    // Business details
-    doc.setFontSize(12);
-    doc.text(profile?.business_name || 'Shop Name', 20, 40);
-    doc.text(profile?.business_address || 'Shop Address', 20, 50);
+    // Header background
+    doc.setFillColor(34, 197, 94); // Green background
+    doc.rect(0, 0, pageWidth, 60, 'F');
+    
+    // Company name in header
+    doc.setTextColor(255, 255, 255); // White text
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text(profile?.business_name || 'SHOP NAME', 20, 30);
+    
+    // Invoice title
+    doc.setFontSize(16);
+    doc.text('INVOICE', pageWidth - 60, 30);
+    
+    // Reset text color for body
+    doc.setTextColor(55, 65, 81); // Dark gray
+    
+    // Company details section
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    let yPos = 80;
+    
+    // Business address
+    if (profile?.business_address) {
+      doc.text('Address:', 20, yPos);
+      doc.text(profile.business_address, 20, yPos + 8);
+      yPos += 20;
+    }
+    
+    // Contact information
+    if (profile?.phone) {
+      doc.text('Phone:', 20, yPos);
+      doc.text(profile.phone, 20, yPos + 8);
+      yPos += 20;
+    }
+    
+    // Invoice details box
+    const invoiceBoxY = 80;
+    doc.setFillColor(243, 244, 246); // Light gray background
+    doc.rect(pageWidth - 90, invoiceBoxY, 80, 60, 'F');
     
     // Invoice details
-    doc.text(`Invoice: ${sale.invoice_number}`, 20, 70);
-    doc.text(`Date: ${new Date(sale.sale_date).toLocaleDateString()}`, 20, 80);
-    doc.text(`Customer ID: ${sale.customer_id}`, 20, 90);
-    doc.text(`Status: ${sale.payment_status.toUpperCase()}`, 20, 100);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('Invoice Details', pageWidth - 85, invoiceBoxY + 15);
     
-    // Table
-    const tableData = items.map((item: SaleItem) => [
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(`Invoice #: ${sale.invoice_number}`, pageWidth - 85, invoiceBoxY + 25);
+    doc.text(`Date: ${new Date(sale.sale_date).toLocaleDateString()}`, pageWidth - 85, invoiceBoxY + 35);
+    doc.text(`Customer: ${sale.customer_id}`, pageWidth - 85, invoiceBoxY + 45);
+    
+    // Payment status badge
+    const statusY = invoiceBoxY + 55;
+    const statusColor = sale.payment_status === 'paid' ? [34, 197, 94] : [249, 115, 22]; // Green or Orange
+    doc.setFillColor(statusColor[0], statusColor[1], statusColor[2]);
+    doc.rect(pageWidth - 85, statusY, 35, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text(sale.payment_status.toUpperCase(), pageWidth - 82, statusY + 5);
+    
+    // Reset text color
+    doc.setTextColor(55, 65, 81);
+    
+    // Items table
+    const tableStartY = Math.max(yPos + 20, 160);
+    
+    // Table headers
+    const tableData = items.map((item: SaleItem, index: number) => [
+      (index + 1).toString(),
       item.name,
       item.quantity.toString(),
       `₹${item.price.toFixed(2)}`,
@@ -287,19 +347,67 @@ export const SalesManagement = () => {
     ]);
 
     (doc as any).autoTable({
-      startY: 120,
-      head: [['Item', 'Qty', 'Price', 'Total']],
+      startY: tableStartY,
+      head: [['#', 'Item Description', 'Qty', 'Unit Price', 'Amount']],
       body: tableData,
       theme: 'grid',
-      styles: { fontSize: 10 }
+      styles: { 
+        fontSize: 10,
+        cellPadding: 8,
+        textColor: [55, 65, 81]
+      },
+      headStyles: {
+        fillColor: [34, 197, 94],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 11
+      },
+      alternateRowStyles: {
+        fillColor: [249, 250, 251]
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 15 },
+        1: { cellWidth: 80 },
+        2: { halign: 'center', cellWidth: 20 },
+        3: { halign: 'right', cellWidth: 30 },
+        4: { halign: 'right', cellWidth: 35 }
+      },
+      margin: { left: 20, right: 20 }
     });
 
-    // Totals
+    // Totals section
     const finalY = (doc as any).lastAutoTable.finalY + 20;
-    doc.text(`Subtotal: ₹${sale.subtotal.toFixed(2)}`, 130, finalY);
-    doc.text(`Tax (18%): ₹${sale.tax_amount.toFixed(2)}`, 130, finalY + 10);
-    doc.setFontSize(14);
-    doc.text(`Total: ₹${sale.total_amount.toFixed(2)}`, 130, finalY + 25);
+    const totalsX = pageWidth - 80;
+    
+    // Totals background
+    doc.setFillColor(249, 250, 251);
+    doc.rect(totalsX - 10, finalY - 5, 70, 45, 'F');
+    
+    // Totals text
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.text(`Subtotal:`, totalsX - 5, finalY + 5);
+    doc.text(`₹${sale.subtotal.toFixed(2)}`, totalsX + 40, finalY + 5);
+    
+    doc.text(`Tax (18%):`, totalsX - 5, finalY + 15);
+    doc.text(`₹${sale.tax_amount.toFixed(2)}`, totalsX + 40, finalY + 15);
+    
+    // Total amount (highlighted)
+    doc.setFillColor(34, 197, 94);
+    doc.rect(totalsX - 10, finalY + 20, 70, 12, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(`TOTAL:`, totalsX - 5, finalY + 28);
+    doc.text(`₹${sale.total_amount.toFixed(2)}`, totalsX + 40, finalY + 28);
+    
+    // Footer
+    doc.setTextColor(107, 114, 128);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    const footerY = doc.internal.pageSize.height - 30;
+    doc.text('Thank you for your business!', 20, footerY);
+    doc.text(`Generated on ${new Date().toLocaleDateString()}`, pageWidth - 80, footerY);
 
     return doc;
   };
