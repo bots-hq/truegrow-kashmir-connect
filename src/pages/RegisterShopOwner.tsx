@@ -18,6 +18,7 @@ const RegisterShopOwner = () => {
     mobileNumber: "",
     shopName: "",
     shopLocation: "",
+    shopAddress: "",
     aadharNumber: "",
     email: "",
     password: "",
@@ -46,7 +47,7 @@ const RegisterShopOwner = () => {
 
   const handleNextStep = () => {
     if (step === 1) {
-      if (!formData.fullName || !formData.mobileNumber || !formData.shopName || !formData.shopLocation || !formData.aadharNumber || !formData.email || !formData.password) {
+      if (!formData.fullName || !formData.mobileNumber || !formData.shopName || !formData.shopLocation || !formData.shopAddress || !formData.aadharNumber || !formData.email || !formData.password) {
         toast({
           title: "Missing Information",
           description: "Please fill in all required fields",
@@ -162,6 +163,19 @@ const RegisterShopOwner = () => {
                       required
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="shopAddress">Shop Address *</Label>
+                  <Textarea
+                    id="shopAddress"
+                    name="shopAddress"
+                    value={formData.shopAddress}
+                    onChange={handleInputChange}
+                    placeholder="Complete shop address"
+                    rows={2}
+                    required
+                  />
                 </div>
 
                 <div className="space-y-2">
