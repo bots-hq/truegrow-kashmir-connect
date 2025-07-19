@@ -60,7 +60,7 @@ const CustomerDashboard = () => {
         .from('sales')
         .select(`
           *,
-          shop_owner:profiles!sales_shop_owner_id_fkey(full_name, business_name)
+          shop_owner:profiles!shop_owner_id(full_name, business_name)
         `)
         .eq('customer_id', profile.customer_id)
         .order('sale_date', { ascending: false });
