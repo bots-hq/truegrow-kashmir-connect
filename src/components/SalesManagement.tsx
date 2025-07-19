@@ -413,8 +413,25 @@ export const SalesManagement = () => {
   };
 
   const downloadInvoice = (sale: Sale) => {
-    const doc = generatePDF(sale);
-    doc.save(`Invoice-${sale.invoice_number}.pdf`);
+    try {
+      console.log('Starting PDF generation for sale:', sale.id);
+      const doc = generatePDF(sale);
+      console.log('PDF generated successfully, starting download...');
+      doc.save(`Invoice-${sale.invoice_number}.pdf`);
+      console.log('Download initiated');
+      
+      toast({
+        title: "Success",
+        description: "Invoice downloaded successfully",
+      });
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      toast({
+        title: "Error",
+        description: "Failed to download invoice. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const renderStars = (rating: number, onClick?: (rating: number) => void) => {
