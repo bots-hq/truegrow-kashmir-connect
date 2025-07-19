@@ -38,12 +38,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Fetch profile data when user logs in
         if (session?.user) {
           setTimeout(async () => {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .single();
-            setProfile(profileData);
+            try {
+              const { data: profileData, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+              
+              if (!error && profileData) {
+                setProfile(profileData);
+              } else {
+                console.log('Profile not found or error:', error);
+                setProfile(null);
+              }
+            } catch (err) {
+              console.error('Error fetching profile:', err);
+              setProfile(null);
+            }
           }, 0);
         } else {
           setProfile(null);
@@ -60,12 +71,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (session?.user) {
         setTimeout(async () => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .single();
-          setProfile(profileData);
+          try {
+            const { data: profileData, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .maybeSingle();
+            
+            if (!error && profileData) {
+              setProfile(profileData);
+            } else {
+              console.log('Profile not found or error:', error);
+              setProfile(null);
+            }
+          } catch (err) {
+            console.error('Error fetching profile:', err);
+            setProfile(null);
+          }
         }, 0);
       }
       
