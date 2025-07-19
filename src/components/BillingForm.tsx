@@ -128,17 +128,21 @@ export const BillingForm = () => {
 
     try {
       // Check if customer ID exists (can be customer or shop owner with customer ID)
+      console.log('Searching for customer ID:', customerId);
+      
       const { data: customer, error: customerError } = await supabase
         .from('profiles')
         .select('customer_id, full_name, role')
         .eq('customer_id', customerId)
         .maybeSingle();
 
+      console.log('Database query result:', { customer, customerError });
+
       if (customerError) {
         console.error('Database error:', customerError);
         toast({
           title: "Error",
-          description: "Database error occurred",
+          description: `Database error: ${customerError.message}`,
           variant: "destructive",
         });
         setIsLoading(false);
@@ -146,6 +150,7 @@ export const BillingForm = () => {
       }
 
       if (!customer) {
+        console.log('No customer found with ID:', customerId);
         toast({
           title: "Error",
           description: `Customer ID ${customerId} not found`,
@@ -154,6 +159,8 @@ export const BillingForm = () => {
         setIsLoading(false);
         return;
       }
+
+      console.log('Found customer:', customer);
 
       const subtotal = calculateSubtotal();
       const tax = calculateTax(subtotal);
