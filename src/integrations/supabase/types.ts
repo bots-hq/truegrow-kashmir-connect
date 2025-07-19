@@ -126,6 +126,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      is_shop_owner: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       user_role: "shop_owner" | "customer"
