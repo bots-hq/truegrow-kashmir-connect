@@ -19,6 +19,7 @@ export type Database = {
           business_address: string | null
           business_name: string | null
           created_at: string
+          customer_id: string
           full_name: string | null
           id: string
           phone: string | null
@@ -30,6 +31,7 @@ export type Database = {
           business_address?: string | null
           business_name?: string | null
           created_at?: string
+          customer_id: string
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -41,6 +43,7 @@ export type Database = {
           business_address?: string | null
           business_name?: string | null
           created_at?: string
+          customer_id?: string
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -50,12 +53,79 @@ export type Database = {
         }
         Relationships: []
       }
+      sales: {
+        Row: {
+          created_at: string
+          customer_id: string
+          id: string
+          invoice_number: string
+          items: Json
+          payment_status: string
+          sale_date: string
+          shop_owner_id: string
+          subtotal: number
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          id?: string
+          invoice_number: string
+          items?: Json
+          payment_status?: string
+          sale_date?: string
+          shop_owner_id: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          id?: string
+          invoice_number?: string
+          items?: Json
+          payment_status?: string
+          sale_date?: string
+          shop_owner_id?: string
+          subtotal?: number
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "sales_shop_owner_id_fkey"
+            columns: ["shop_owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_customer_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_invoice_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       user_role: "shop_owner" | "customer"
