@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { BillingForm } from "@/components/BillingForm";
 import { RecentSales } from "@/components/RecentSales";
+import { SalesManagement } from "@/components/SalesManagement";
 import { supabase } from "@/integrations/supabase/client";
 
 const ShopOwnerDashboard = () => {
@@ -137,6 +138,13 @@ const ShopOwnerDashboard = () => {
                   <FileText className="w-4 h-4 mr-2" />
                   New Sale
                 </Button>
+                <Button 
+                  variant={activeTab === "manage" ? "default" : "outline"}
+                  onClick={() => setActiveTab("manage")}
+                >
+                  <Star className="w-4 h-4 mr-2" />
+                  Manage Sales
+                </Button>
               </div>
               <Button 
                 onClick={handleSignOut}
@@ -176,6 +184,10 @@ const ShopOwnerDashboard = () => {
 
           {activeTab === "billing" && (
             <BillingForm />
+          )}
+
+          {activeTab === "manage" && (
+            <SalesManagement />
           )}
         </div>
       </div>

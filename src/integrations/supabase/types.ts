@@ -57,10 +57,12 @@ export type Database = {
         Row: {
           created_at: string
           customer_id: string
+          customer_rating: number | null
           id: string
           invoice_number: string
           items: Json
           payment_status: string
+          rating_comment: string | null
           sale_date: string
           shop_owner_id: string
           subtotal: number
@@ -71,10 +73,12 @@ export type Database = {
         Insert: {
           created_at?: string
           customer_id: string
+          customer_rating?: number | null
           id?: string
           invoice_number: string
           items?: Json
           payment_status?: string
+          rating_comment?: string | null
           sale_date?: string
           shop_owner_id: string
           subtotal?: number
@@ -85,10 +89,12 @@ export type Database = {
         Update: {
           created_at?: string
           customer_id?: string
+          customer_rating?: number | null
           id?: string
           invoice_number?: string
           items?: Json
           payment_status?: string
+          rating_comment?: string | null
           sale_date?: string
           shop_owner_id?: string
           subtotal?: number
