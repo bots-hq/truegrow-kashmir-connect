@@ -22,39 +22,127 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const CustomerDashboard = () => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
-  // Real data - currently empty as no customer data exists
-  const stats = [
+  
+  // State for real data
+  const [stats, setStats] = useState({
+    totalPurchases: 0,
+    pendingDues: 0,
+    completedOrders: 0
+  });
+  
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [pendingDues, setPendingDues] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Static data (would be fetched from database in real app)
+  const nearbyShops: any[] = [];
+
+  // Fetch customer's sales data
+  useEffect(() => {
+    if (profile?.customer_id) {
+      fetchCustomerData();
+    }
+  }, [profile?.customer_id]);
+
+  const fetchCustomerData = async () => {
+    if (!profile?.customer_id) return;
+
+    try {
+      setLoading(true);
+
+      // Fetch sales records for this customer
+      const { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select(`
+          *,
+          shop_owner:profiles!sales_shop_owner_id_fkey(full_name, business_name)
+        `)
+        .eq('customer_id', profile.customer_id)
+        .order('sale_date', { ascending: false });
+
+      if (salesError) {
+        console.error('Error fetching sales:', salesError);
+        return;
+      }
+
+      // Process sales data
+      const sales = salesData || [];
+      
+      // Calculate stats
+      const totalPurchases = sales.reduce((sum, sale) => sum + Number(sale.total_amount), 0);
+      const pendingDues = sales
+        .filter(sale => sale.payment_status === 'pending')
+        .reduce((sum, sale) => sum + Number(sale.total_amount), 0);
+      const completedOrders = sales.filter(sale => sale.payment_status === 'paid').length;
+
+      setStats({
+        totalPurchases,
+        pendingDues, 
+        completedOrders
+      });
+
+      // Format recent orders
+      const formattedOrders = sales.slice(0, 5).map(sale => ({
+        id: sale.id,
+        invoiceNumber: sale.invoice_number,
+        shop: sale.shop_owner?.business_name || sale.shop_owner?.full_name || 'Unknown Shop',
+        items: JSON.parse(String(sale.items || '[]')).map((item: any) => item.name).join(', ') || 'No items',
+        amount: `₹${Number(sale.total_amount).toFixed(2)}`,
+        status: sale.payment_status,
+        date: new Date(sale.sale_date).toLocaleDateString()
+      }));
+
+      setRecentOrders(formattedOrders);
+
+      // Format pending dues
+      const pendingDuesList = sales
+        .filter(sale => sale.payment_status === 'pending')
+        .map(sale => ({
+          id: sale.id,
+          shop: sale.shop_owner?.business_name || sale.shop_owner?.full_name || 'Unknown Shop',
+          amount: `₹${Number(sale.total_amount).toFixed(2)}`,
+          dueDate: new Date(sale.sale_date).toLocaleDateString(),
+          priority: 'medium'
+        }));
+
+      setPendingDues(pendingDuesList);
+
+    } catch (error) {
+      console.error('Error fetching customer data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Dynamic stats based on real data
+  const dynamicStats = [
     {
       title: "Total Purchases",
-      value: "₹0",
-      description: "This month",
+      value: `₹${stats.totalPurchases.toLocaleString()}`,
+      description: "All time",
       icon: <ShoppingCart className="w-5 h-5" />,
       color: "text-blue-600"
     },
     {
       title: "Pending Dues",
-      value: "₹0",
-      description: "0 shops",
+      value: `₹${stats.pendingDues.toLocaleString()}`,
+      description: `${pendingDues.length} invoice(s)`,
       icon: <CreditCard className="w-5 h-5" />,
       color: "text-orange-600"
     },
     {
-      title: "Trust Score",
-      value: "N/A",
-      description: "No purchase history",
+      title: "Completed Orders",
+      value: stats.completedOrders.toString(),
+      description: "Paid orders",
       icon: <Star className="w-5 h-5" />,
-      color: "text-gray-600"
+      color: "text-green-600"
     }
   ];
-
-  // No real data - these would be fetched from database
-  const nearbyShops: any[] = [];
-  const recentOrders: any[] = [];
-  const pendingDues: any[] = [];
 
   const copyCustomerId = () => {
     if (profile?.customer_id) {
@@ -122,7 +210,7 @@ const CustomerDashboard = () => {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {stats.map((stat, index) => (
+            {dynamicStats.map((stat, index) => (
               <Card key={index} className="bg-white/80 backdrop-blur-sm border-blue-100">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
