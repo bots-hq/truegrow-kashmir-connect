@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,12 +14,18 @@ import {
   Heart,
   MapPin,
   Clock,
-  IndianRupee
+  IndianRupee,
+  Copy,
+  User
 } from "lucide-react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const CustomerDashboard = () => {
+  const { user, profile } = useAuth();
+  const { toast } = useToast();
   // Real data - currently empty as no customer data exists
   const stats = [
     {
@@ -49,6 +56,16 @@ const CustomerDashboard = () => {
   const recentOrders: any[] = [];
   const pendingDues: any[] = [];
 
+  const copyCustomerId = () => {
+    if (profile?.customer_id) {
+      navigator.clipboard.writeText(profile.customer_id);
+      toast({
+        title: "Copied!",
+        description: "Customer ID copied to clipboard",
+      });
+    }
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -71,6 +88,37 @@ const CustomerDashboard = () => {
               </Badge>
             </div>
           </div>
+
+          {/* Customer ID Card */}
+          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white mb-8">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-white/20 rounded-lg">
+                    <User className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">Your Customer ID</h3>
+                    <p className="text-blue-100 text-sm">Share this ID with shop owners when making purchases</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold mb-2">
+                    {profile?.customer_id || 'Loading...'}
+                  </p>
+                  <Button 
+                    onClick={copyCustomerId} 
+                    size="sm" 
+                    variant="secondary"
+                    className="bg-white/20 text-white hover:bg-white/30 border-white/30"
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy ID
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
