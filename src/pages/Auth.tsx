@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { Loader2, LogIn, UserPlus } from 'lucide-react';
 
 const Auth = () => {
@@ -35,7 +36,7 @@ const Auth = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await signIn(formData.email, formData.password);
+      const { data, error } = await signIn(formData.email, formData.password);
       
       if (error) {
         toast({
@@ -48,7 +49,34 @@ const Auth = () => {
           title: "Success!",
           description: "You have been signed in successfully."
         });
-        navigate('/');
+        
+        // Wait a moment for the profile to be loaded, then redirect based on role
+        setTimeout(async () => {
+          try {
+            // Fetch the user's profile to determine their role
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('user_id', data.user?.id)
+              .maybeSingle();
+            
+            if (!profileError && profileData) {
+              // Redirect based on user role
+              if (profileData.role === 'shop_owner') {
+                navigate('/dashboard/shop-owner');
+              } else if (profileData.role === 'customer') {
+                navigate('/dashboard/customer');
+              } else {
+                navigate('/');
+              }
+            } else {
+              navigate('/');
+            }
+          } catch (err) {
+            console.error('Error fetching profile for redirect:', err);
+            navigate('/');
+          }
+        }, 500);
       }
     } catch (error) {
       toast({

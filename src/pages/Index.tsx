@@ -168,6 +168,17 @@ const Index = () => {
     return () => clearInterval(testimonialTimer);
   }, []);
 
+  // Redirect authenticated users to their dashboard
+  useEffect(() => {
+    if (user && profile) {
+      if (profile.role === 'shop_owner') {
+        navigate('/dashboard/shop-owner');
+      } else if (profile.role === 'customer') {
+        navigate('/dashboard/customer');
+      }
+    }
+  }, [user, profile, navigate]);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 overflow-hidden">
       {/* Enhanced Floating Elements */}

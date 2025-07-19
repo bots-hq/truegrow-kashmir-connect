@@ -18,7 +18,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
     }
     
     if (!loading && user && profile && requiredRole && profile.role !== requiredRole) {
-      navigate('/');
+      // Redirect users to their appropriate dashboard based on their role
+      if (profile.role === 'shop_owner') {
+        navigate('/dashboard/shop-owner');
+      } else if (profile.role === 'customer') {
+        navigate('/dashboard/customer');
+      } else {
+        navigate('/');
+      }
     }
   }, [user, profile, loading, navigate, requiredRole]);
 
