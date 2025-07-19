@@ -13,13 +13,23 @@ import {
   TrendingUp,
   AlertTriangle,
   IndianRupee,
-  Star
+  Star,
+  LogOut
 } from "lucide-react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const ShopOwnerDashboard = () => {
   const [activeSection, setActiveSection] = useState("overview");
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   const stats = [
     {
@@ -75,8 +85,12 @@ const ShopOwnerDashboard = () => {
             <div className="flex items-center space-x-4">
               <SidebarTrigger />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Shop Owner Dashboard</h1>
-                <p className="text-gray-600">Welcome back, manage your business here</p>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {profile?.business_name || 'Shop Owner Dashboard'}
+                </h1>
+                <p className="text-gray-600">
+                  Welcome back, {profile?.full_name || user?.email}
+                </p>
               </div>
             </div>
             
@@ -88,6 +102,14 @@ const ShopOwnerDashboard = () => {
               <Button className="bg-green-600 hover:bg-green-700">
                 <FileText className="w-4 h-4 mr-2" />
                 New Invoice
+              </Button>
+              <Button 
+                onClick={handleSignOut}
+                variant="outline" 
+                className="border-red-200 text-red-600 hover:bg-red-50"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
               </Button>
             </div>
           </div>

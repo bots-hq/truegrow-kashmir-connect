@@ -7,12 +7,14 @@ import {
   ArrowRight, Shield, Users, TrendingUp, Smartphone, MapPin, Star, CheckCircle, 
   Zap, Globe, Award, Play, Quote, ChevronRight, Target, Lightbulb, 
   BarChart3, ShoppingCart, CreditCard, Package, MessageCircle, Clock,
-  Sparkles, Leaf, Mountain, Heart
+  Sparkles, Leaf, Mountain, Heart, LogIn, UserPlus
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
@@ -210,13 +212,44 @@ const Index = () => {
               <a href="#testimonials" className="text-gray-600 hover:text-green-600 font-medium transition-all duration-300 hover:scale-105">Success Stories</a>
               <a href="#community" className="text-gray-600 hover:text-green-600 font-medium transition-all duration-300 hover:scale-105">Community</a>
             </div>
-            <Button 
-              onClick={() => navigate('/role-selection')}
-              className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 group"
-            >
-              Get Started
-              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
+            
+            {user ? (
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-600">Welcome, {profile?.full_name || user.email}</span>
+                <Button 
+                  onClick={() => navigate(profile?.role === 'shop_owner' ? '/dashboard/shop-owner' : '/dashboard/customer')}
+                  className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 mr-2"
+                >
+                  Dashboard
+                </Button>
+                <Button 
+                  onClick={signOut}
+                  variant="outline"
+                  className="border-gray-300 text-gray-600 hover:border-gray-400"
+                >
+                  Sign Out
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Button 
+                  onClick={() => navigate('/auth')}
+                  variant="outline"
+                  className="border-green-600 text-green-600 hover:bg-green-50"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign In
+                </Button>
+                <Button 
+                  onClick={() => navigate('/auth')}
+                  className="bg-gradient-to-r from-green-600 via-emerald-600 to-teal-600 hover:from-green-700 hover:via-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 group"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Get Started
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </div>
+            )}
           </nav>
         </div>
       </header>
