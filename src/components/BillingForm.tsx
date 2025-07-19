@@ -127,10 +127,10 @@ export const BillingForm = () => {
     setIsLoading(true);
 
     try {
-      // Check if customer ID exists
+      // Check if customer ID exists (can be customer or shop owner with customer ID)
       const { data: customer, error: customerError } = await supabase
         .from('profiles')
-        .select('customer_id')
+        .select('customer_id, full_name, role')
         .eq('customer_id', customerId)
         .maybeSingle();
 
@@ -148,7 +148,7 @@ export const BillingForm = () => {
       if (!customer) {
         toast({
           title: "Error",
-          description: "Customer ID not found",
+          description: `Customer ID ${customerId} not found`,
           variant: "destructive",
         });
         setIsLoading(false);
