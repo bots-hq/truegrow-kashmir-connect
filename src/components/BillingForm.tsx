@@ -132,9 +132,20 @@ export const BillingForm = () => {
         .from('profiles')
         .select('customer_id')
         .eq('customer_id', customerId)
-        .single();
+        .maybeSingle();
 
-      if (customerError || !customer) {
+      if (customerError) {
+        console.error('Database error:', customerError);
+        toast({
+          title: "Error",
+          description: "Database error occurred",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      if (!customer) {
         toast({
           title: "Error",
           description: "Customer ID not found",
