@@ -5,16 +5,22 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Star, FileText, User, Calendar, DollarSign } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Star, FileText, User, Calendar, DollarSign, Edit, Download, Plus, Trash2, Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 interface Sale {
   id: string;
   invoice_number: string;
   customer_id: string;
   total_amount: number;
+  subtotal: number;
+  tax_amount: number;
   payment_status: string;
   sale_date: string;
   customer_rating?: number;
@@ -22,14 +28,24 @@ interface Sale {
   items: any;
 }
 
+interface SaleItem {
+  name: string;
+  quantity: number;
+  price: number;
+  total: number;
+}
+
 export const SalesManagement = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [ratings, setRatings] = useState<{[key: string]: number}>({});
   const [comments, setComments] = useState<{[key: string]: string}>({});
+  const [editingSale, setEditingSale] = useState<string | null>(null);
+  const [editedSales, setEditedSales] = useState<{[key: string]: Partial<Sale>}>({});
+  const [editedItems, setEditedItems] = useState<{[key: string]: SaleItem[]}>({});
 
   useEffect(() => {
     if (user?.id) {
@@ -126,6 +142,173 @@ export const SalesManagement = () => {
     }
   };
 
+  const startEditing = (saleId: string) => {
+    const sale = sales.find(s => s.id === saleId);
+    if (sale) {
+      setEditingSale(saleId);
+      setEditedSales(prev => ({ ...prev, [saleId]: { ...sale } }));
+      setEditedItems(prev => ({ ...prev, [saleId]: JSON.parse(sale.items) }));
+    }
+  };
+
+  const cancelEditing = (saleId: string) => {
+    setEditingSale(null);
+    setEditedSales(prev => {
+      const newState = { ...prev };
+      delete newState[saleId];
+      return newState;
+    });
+    setEditedItems(prev => {
+      const newState = { ...prev };
+      delete newState[saleId];
+      return newState;
+    });
+  };
+
+  const updateEditedSale = (saleId: string, field: string, value: any) => {
+    setEditedSales(prev => ({
+      ...prev,
+      [saleId]: { ...prev[saleId], [field]: value }
+    }));
+  };
+
+  const addItem = (saleId: string) => {
+    const newItem: SaleItem = { name: '', quantity: 1, price: 0, total: 0 };
+    setEditedItems(prev => ({
+      ...prev,
+      [saleId]: [...(prev[saleId] || []), newItem]
+    }));
+  };
+
+  const updateItem = (saleId: string, itemIndex: number, field: string, value: any) => {
+    setEditedItems(prev => {
+      const items = [...(prev[saleId] || [])];
+      items[itemIndex] = { ...items[itemIndex], [field]: value };
+      
+      // Calculate total for this item
+      if (field === 'quantity' || field === 'price') {
+        items[itemIndex].total = items[itemIndex].quantity * items[itemIndex].price;
+      }
+      
+      return { ...prev, [saleId]: items };
+    });
+  };
+
+  const removeItem = (saleId: string, itemIndex: number) => {
+    setEditedItems(prev => ({
+      ...prev,
+      [saleId]: prev[saleId]?.filter((_, index) => index !== itemIndex) || []
+    }));
+  };
+
+  const calculateTotals = (items: SaleItem[]) => {
+    const subtotal = items.reduce((sum, item) => sum + item.total, 0);
+    const taxAmount = subtotal * 0.18; // 18% tax
+    const totalAmount = subtotal + taxAmount;
+    return { subtotal, taxAmount, totalAmount };
+  };
+
+  const saveSale = async (saleId: string) => {
+    setUpdatingId(saleId);
+    try {
+      const editedSale = editedSales[saleId];
+      const items = editedItems[saleId];
+      
+      if (!editedSale || !items) return;
+
+      const { subtotal, taxAmount, totalAmount } = calculateTotals(items);
+      
+      const updateData = {
+        ...editedSale,
+        items: JSON.stringify(items),
+        subtotal,
+        tax_amount: taxAmount,
+        total_amount: totalAmount
+      };
+
+      const { error } = await supabase
+        .from('sales')
+        .update(updateData)
+        .eq('id', saleId);
+
+      if (error) throw error;
+
+      // Update local state
+      setSales(sales.map(sale => 
+        sale.id === saleId 
+          ? { ...sale, ...updateData, items: JSON.stringify(items) }
+          : sale
+      ));
+
+      setEditingSale(null);
+      cancelEditing(saleId);
+
+      toast({
+        title: "Success",
+        description: "Sale updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating sale:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update sale",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const generatePDF = (sale: Sale) => {
+    const doc = new jsPDF();
+    const items = JSON.parse(sale.items);
+    
+    // Header
+    doc.setFontSize(20);
+    doc.text('INVOICE', 105, 20, { align: 'center' });
+    
+    // Business details
+    doc.setFontSize(12);
+    doc.text(profile?.business_name || 'Shop Name', 20, 40);
+    doc.text(profile?.business_address || 'Shop Address', 20, 50);
+    
+    // Invoice details
+    doc.text(`Invoice: ${sale.invoice_number}`, 20, 70);
+    doc.text(`Date: ${new Date(sale.sale_date).toLocaleDateString()}`, 20, 80);
+    doc.text(`Customer ID: ${sale.customer_id}`, 20, 90);
+    doc.text(`Status: ${sale.payment_status.toUpperCase()}`, 20, 100);
+    
+    // Table
+    const tableData = items.map((item: SaleItem) => [
+      item.name,
+      item.quantity.toString(),
+      `₹${item.price.toFixed(2)}`,
+      `₹${item.total.toFixed(2)}`
+    ]);
+
+    (doc as any).autoTable({
+      startY: 120,
+      head: [['Item', 'Qty', 'Price', 'Total']],
+      body: tableData,
+      theme: 'grid',
+      styles: { fontSize: 10 }
+    });
+
+    // Totals
+    const finalY = (doc as any).lastAutoTable.finalY + 20;
+    doc.text(`Subtotal: ₹${sale.subtotal.toFixed(2)}`, 130, finalY);
+    doc.text(`Tax (18%): ₹${sale.tax_amount.toFixed(2)}`, 130, finalY + 10);
+    doc.setFontSize(14);
+    doc.text(`Total: ₹${sale.total_amount.toFixed(2)}`, 130, finalY + 25);
+
+    return doc;
+  };
+
+  const downloadInvoice = (sale: Sale) => {
+    const doc = generatePDF(sale);
+    doc.save(`Invoice-${sale.invoice_number}.pdf`);
+  };
+
   const renderStars = (rating: number, onClick?: (rating: number) => void) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
@@ -177,6 +360,9 @@ export const SalesManagement = () => {
         {sales.map((sale) => {
           const currentRating = ratings[sale.id] ?? sale.customer_rating ?? 0;
           const currentComment = comments[sale.id] ?? sale.rating_comment ?? '';
+          const isEditing = editingSale === sale.id;
+          const editedSale = editedSales[sale.id] || sale;
+          const items = isEditing ? (editedItems[sale.id] || []) : JSON.parse(sale.items);
 
           const setTempRating = (rating: number) => {
             setRatings(prev => ({ ...prev, [sale.id]: rating }));
@@ -190,29 +376,102 @@ export const SalesManagement = () => {
             <Card key={sale.id} className="bg-white/80 backdrop-blur-sm border-green-100">
               <CardHeader className="pb-4">
                 <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="flex items-center">
+                  <div className="flex-1">
+                    <CardTitle className="flex items-center mb-3">
                       <FileText className="w-5 h-5 mr-2 text-green-600" />
-                      {sale.invoice_number}
+                      {isEditing ? (
+                        <Input
+                          value={editedSale.invoice_number}
+                          onChange={(e) => updateEditedSale(sale.id, 'invoice_number', e.target.value)}
+                          className="w-48 h-8"
+                        />
+                      ) : (
+                        sale.invoice_number
+                      )}
                     </CardTitle>
-                    <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                      <div className="flex items-center">
-                        <User className="w-4 h-4 mr-1" />
-                        {sale.customer_id}
+                    
+                    {isEditing ? (
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <Label className="text-xs">Customer ID</Label>
+                          <Input
+                            value={editedSale.customer_id}
+                            onChange={(e) => updateEditedSale(sale.id, 'customer_id', e.target.value)}
+                            className="h-8"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Sale Date</Label>
+                          <Input
+                            type="date"
+                            value={editedSale.sale_date?.split('T')[0]}
+                            onChange={(e) => updateEditedSale(sale.id, 'sale_date', e.target.value)}
+                            className="h-8"
+                          />
+                        </div>
                       </div>
-                      <div className="flex items-center">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        {new Date(sale.sale_date).toLocaleDateString()}
+                    ) : (
+                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                        <div className="flex items-center">
+                          <User className="w-4 h-4 mr-1" />
+                          {sale.customer_id}
+                        </div>
+                        <div className="flex items-center">
+                          <Calendar className="w-4 h-4 mr-1" />
+                          {new Date(sale.sale_date).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center">
+                          <DollarSign className="w-4 h-4 mr-1" />
+                          ₹{sale.total_amount.toFixed(2)}
+                        </div>
                       </div>
-                      <div className="flex items-center">
-                        <DollarSign className="w-4 h-4 mr-1" />
-                        ₹{sale.total_amount.toFixed(2)}
-                      </div>
-                    </div>
+                    )}
                   </div>
-                  <Badge className={getStatusColor(sale.payment_status)}>
-                    {sale.payment_status}
-                  </Badge>
+                  
+                  <div className="flex items-center gap-2">
+                    <Badge className={getStatusColor(sale.payment_status)}>
+                      {sale.payment_status}
+                    </Badge>
+                    
+                    {!isEditing ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => downloadInvoice(sale)}
+                          className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => startEditing(sale.id)}
+                          className="border-green-200 text-green-600 hover:bg-green-50"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() => saveSale(sale.id)}
+                          disabled={updatingId === sale.id}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => cancelEditing(sale.id)}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               
@@ -220,68 +479,165 @@ export const SalesManagement = () => {
                 {/* Payment Status Section */}
                 <div>
                   <Label className="text-sm font-medium mb-2 block">Payment Status</Label>
-                  <Select
-                    value={sale.payment_status}
-                    onValueChange={(value) => updatePaymentStatus(sale.id, value)}
-                    disabled={updatingId === sale.id}
-                  >
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {isEditing ? (
+                    <Select
+                      value={editedSale.payment_status}
+                      onValueChange={(value) => updateEditedSale(sale.id, 'payment_status', value)}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <Select
+                      value={sale.payment_status}
+                      onValueChange={(value) => updatePaymentStatus(sale.id, value)}
+                      disabled={updatingId === sale.id}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="paid">Paid</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
 
-                {/* Customer Rating Section */}
+                {/* Items Section */}
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">Customer Rating</Label>
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="flex gap-1">
-                        {renderStars(currentRating, setTempRating)}
-                      </div>
-                      <span className="text-sm text-gray-600">
-                        {currentRating > 0 ? `${currentRating}/5 stars` : 'No rating'}
-                      </span>
-                    </div>
-                    
-                    <div>
-                      <Textarea
-                        placeholder="Add a comment about this customer (optional)"
-                        value={currentComment}
-                        onChange={(e) => setTempComment(e.target.value)}
-                        className="min-h-[60px]"
-                      />
-                    </div>
-
-                    {(currentRating !== (sale.customer_rating || 0) || currentComment !== (sale.rating_comment || '')) && (
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-sm font-medium">Items</Label>
+                    {isEditing && (
                       <Button
-                        onClick={() => updateRating(sale.id, currentRating, currentComment)}
-                        disabled={updatingId === sale.id || currentRating === 0}
                         size="sm"
-                        className="bg-green-600 hover:bg-green-700"
+                        variant="outline"
+                        onClick={() => addItem(sale.id)}
+                        className="border-green-200 text-green-600 hover:bg-green-50"
                       >
-                        {updatingId === sale.id ? "Updating..." : "Save Rating"}
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add Item
                       </Button>
                     )}
                   </div>
-                </div>
-
-                {/* Items Summary */}
-                <div>
-                  <Label className="text-sm font-medium mb-2 block">Items</Label>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    {JSON.parse(sale.items).map((item: any, index: number) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span>{item.name} (x{item.quantity})</span>
-                        <span>₹{item.total.toFixed(2)}</span>
+                  
+                  <div className="space-y-2">
+                    {items.map((item: SaleItem, index: number) => (
+                      <div key={index} className="bg-gray-50 rounded-lg p-3">
+                        {isEditing ? (
+                          <div className="grid grid-cols-12 gap-2 items-center">
+                            <div className="col-span-4">
+                              <Input
+                                placeholder="Item name"
+                                value={item.name}
+                                onChange={(e) => updateItem(sale.id, index, 'name', e.target.value)}
+                                className="h-8"
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <Input
+                                type="number"
+                                placeholder="Qty"
+                                value={item.quantity}
+                                onChange={(e) => updateItem(sale.id, index, 'quantity', Number(e.target.value))}
+                                className="h-8"
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <Input
+                                type="number"
+                                placeholder="Price"
+                                value={item.price}
+                                onChange={(e) => updateItem(sale.id, index, 'price', Number(e.target.value))}
+                                className="h-8"
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <span className="text-sm font-medium">₹{item.total.toFixed(2)}</span>
+                            </div>
+                            <div className="col-span-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => removeItem(sale.id, index)}
+                                className="h-8 w-8 p-0 border-red-200 text-red-600 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex justify-between text-sm">
+                            <span>{item.name} (x{item.quantity})</span>
+                            <span>₹{item.total.toFixed(2)}</span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
+
+                  {/* Totals */}
+                  {isEditing && (
+                    <div className="mt-4 p-3 bg-green-50 rounded-lg">
+                      <div className="space-y-1 text-sm">
+                        <div className="flex justify-between">
+                          <span>Subtotal:</span>
+                          <span>₹{calculateTotals(items).subtotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Tax (18%):</span>
+                          <span>₹{calculateTotals(items).taxAmount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between font-medium">
+                          <span>Total:</span>
+                          <span>₹{calculateTotals(items).totalAmount.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {/* Customer Rating Section */}
+                {!isEditing && (
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Customer Rating</Label>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          {renderStars(currentRating, setTempRating)}
+                        </div>
+                        <span className="text-sm text-gray-600">
+                          {currentRating > 0 ? `${currentRating}/5 stars` : 'No rating'}
+                        </span>
+                      </div>
+                      
+                      <div>
+                        <Textarea
+                          placeholder="Add a comment about this customer (optional)"
+                          value={currentComment}
+                          onChange={(e) => setTempComment(e.target.value)}
+                          className="min-h-[60px]"
+                        />
+                      </div>
+
+                      {(currentRating !== (sale.customer_rating || 0) || currentComment !== (sale.rating_comment || '')) && (
+                        <Button
+                          onClick={() => updateRating(sale.id, currentRating, currentComment)}
+                          disabled={updatingId === sale.id || currentRating === 0}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          {updatingId === sale.id ? "Updating..." : "Save Rating"}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
