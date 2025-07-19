@@ -353,7 +353,7 @@ export const SalesManagement = () => {
       theme: 'grid',
       styles: { 
         fontSize: 10,
-        cellPadding: 8,
+        cellPadding: 6,
         textColor: [55, 65, 81]
       },
       headStyles: {
@@ -366,17 +366,17 @@ export const SalesManagement = () => {
         fillColor: [249, 250, 251]
       },
       columnStyles: {
-        0: { halign: 'center', cellWidth: 15 },
-        1: { cellWidth: 80 },
-        2: { halign: 'center', cellWidth: 20 },
-        3: { halign: 'right', cellWidth: 30 },
-        4: { halign: 'right', cellWidth: 35 }
+        0: { halign: 'center', cellWidth: 12 }, // Reduced from 15
+        1: { cellWidth: 70 }, // Reduced from 80  
+        2: { halign: 'center', cellWidth: 18 }, // Reduced from 20
+        3: { halign: 'right', cellWidth: 25 }, // Reduced from 30
+        4: { halign: 'right', cellWidth: 30 } // Reduced from 35
       },
       margin: { left: 20, right: 20 }
     });
 
-    // Totals section
-    const finalY = (doc as any).previousAutoTable.finalY + 20;
+    // Totals section - use correct finalY reference
+    const finalY = (doc as any).lastAutoTable.finalY + 20;
     const totalsX = pageWidth - 80;
     
     // Totals background
