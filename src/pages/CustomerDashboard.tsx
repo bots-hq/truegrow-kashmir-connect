@@ -19,95 +19,35 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 const CustomerDashboard = () => {
+  // Real data - currently empty as no customer data exists
   const stats = [
     {
       title: "Total Purchases",
-      value: "₹45,300",
+      value: "₹0",
       description: "This month",
       icon: <ShoppingCart className="w-5 h-5" />,
       color: "text-blue-600"
     },
     {
       title: "Pending Dues",
-      value: "₹2,400",
-      description: "2 shops",
+      value: "₹0",
+      description: "0 shops",
       icon: <CreditCard className="w-5 h-5" />,
       color: "text-orange-600"
     },
     {
       title: "Trust Score",
-      value: "4.6/5",
-      description: "Excellent rating",
+      value: "N/A",
+      description: "No purchase history",
       icon: <Star className="w-5 h-5" />,
-      color: "text-green-600"
+      color: "text-gray-600"
     }
   ];
 
-  const nearbyShops = [
-    {
-      name: "Himalaya Agro Store",
-      location: "Srinagar, 2.5 km",
-      rating: 4.8,
-      speciality: "Pesticides & Fertilizers",
-      offers: "10% off on bulk orders",
-      image: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=300&h=200&fit=crop"
-    },
-    {
-      name: "Kashmir Seeds & Supplies",
-      location: "Baramulla, 5 km", 
-      rating: 4.5,
-      speciality: "Premium Seeds",
-      offers: "Free delivery above ₹500",
-      image: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=300&h=200&fit=crop"
-    },
-    {
-      name: "Valley Fertilizer Hub",
-      location: "Anantnag, 8 km",
-      rating: 4.7,
-      speciality: "Organic Products",
-      offers: "Buy 2 Get 1 Free",
-      image: "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?w=300&h=200&fit=crop"
-    }
-  ];
-
-  const recentOrders = [
-    {
-      shop: "Himalaya Agro Store",
-      items: "NPK Fertilizer, Pesticide Spray",
-      amount: "₹3,200",
-      status: "delivered",
-      date: "2 days ago"
-    },
-    {
-      shop: "Kashmir Seeds & Supplies", 
-      items: "Wheat Seeds, Rice Seeds",
-      amount: "₹1,800",
-      status: "pending",
-      date: "5 days ago"
-    },
-    {
-      shop: "Valley Fertilizer Hub",
-      items: "Organic Compost",
-      amount: "₹1,200",
-      status: "paid",
-      date: "1 week ago"
-    }
-  ];
-
-  const pendingDues = [
-    {
-      shop: "Himalaya Agro Store",
-      amount: "₹1,200",
-      dueDate: "3 days",
-      priority: "medium"
-    },
-    {
-      shop: "Valley Fertilizer Hub",
-      amount: "₹1,200",
-      dueDate: "Overdue by 1 day",
-      priority: "high"
-    }
-  ];
+  // No real data - these would be fetched from database
+  const nearbyShops: any[] = [];
+  const recentOrders: any[] = [];
+  const pendingDues: any[] = [];
 
   return (
     <SidebarProvider>
@@ -125,9 +65,9 @@ const CustomerDashboard = () => {
             </div>
             
             <div className="flex items-center space-x-2">
-              <Badge className="bg-green-100 text-green-800">
+              <Badge className="bg-gray-100 text-gray-600">
                 <Star className="w-3 h-3 mr-1" />
-                Trust Score: 4.6
+                Trust Score: N/A
               </Badge>
             </div>
           </div>
@@ -188,36 +128,40 @@ const CustomerDashboard = () => {
                   <CardDescription>Agricultural suppliers in your area</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {nearbyShops.map((shop, index) => (
-                      <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
-                        <img 
-                          src={shop.image} 
-                          alt={shop.name}
-                          className="w-20 h-20 rounded-lg object-cover"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-semibold text-gray-900">{shop.name}</h4>
-                            <Button size="sm" variant="ghost" className="text-red-500">
-                              <Heart className="w-4 h-4" />
-                            </Button>
-                          </div>
-                          <p className="text-sm text-gray-600 mb-1">{shop.location}</p>
-                          <p className="text-sm text-blue-600 mb-2">{shop.speciality}</p>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <Star className="w-4 h-4 text-yellow-500 mr-1" />
-                              <span className="text-sm font-medium">{shop.rating}</span>
+                  {nearbyShops.length === 0 ? (
+                    <p className="text-gray-500 text-center py-8">No shops found in your area yet.</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {nearbyShops.map((shop, index) => (
+                        <div key={index} className="flex gap-4 p-4 bg-gray-50 rounded-lg hover:shadow-md transition-shadow cursor-pointer">
+                          <img 
+                            src={shop.image} 
+                            alt={shop.name}
+                            className="w-20 h-20 rounded-lg object-cover"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-2">
+                              <h4 className="font-semibold text-gray-900">{shop.name}</h4>
+                              <Button size="sm" variant="ghost" className="text-red-500">
+                                <Heart className="w-4 h-4" />
+                              </Button>
                             </div>
-                            <Badge variant="secondary" className="text-xs">
-                              {shop.offers}
-                            </Badge>
+                            <p className="text-sm text-gray-600 mb-1">{shop.location}</p>
+                            <p className="text-sm text-blue-600 mb-2">{shop.speciality}</p>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <Star className="w-4 h-4 text-yellow-500 mr-1" />
+                                <span className="text-sm font-medium">{shop.rating}</span>
+                              </div>
+                              <Badge variant="secondary" className="text-xs">
+                                {shop.offers}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -232,23 +176,27 @@ const CustomerDashboard = () => {
                 <CardDescription>Outstanding payments</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {pendingDues.map((due, index) => (
-                    <div key={index} className="p-3 bg-orange-50 rounded-lg">
-                      <div className="flex justify-between items-start mb-2">
-                        <p className="font-medium text-gray-900 text-sm">{due.shop}</p>
-                        <Badge variant={due.priority === 'high' ? 'destructive' : 'secondary'}>
-                          {due.priority}
-                        </Badge>
+                {pendingDues.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">No pending dues.</p>
+                ) : (
+                  <div className="space-y-4">
+                    {pendingDues.map((due, index) => (
+                      <div key={index} className="p-3 bg-orange-50 rounded-lg">
+                        <div className="flex justify-between items-start mb-2">
+                          <p className="font-medium text-gray-900 text-sm">{due.shop}</p>
+                          <Badge variant={due.priority === 'high' ? 'destructive' : 'secondary'}>
+                            {due.priority}
+                          </Badge>
+                        </div>
+                        <p className="text-lg font-bold text-orange-600">{due.amount}</p>
+                        <p className="text-xs text-gray-600 mb-3">Due: {due.dueDate}</p>
+                        <Button size="sm" className="w-full bg-orange-600 hover:bg-orange-700">
+                          Pay Now
+                        </Button>
                       </div>
-                      <p className="text-lg font-bold text-orange-600">{due.amount}</p>
-                      <p className="text-xs text-gray-600 mb-3">Due: {due.dueDate}</p>
-                      <Button size="sm" className="w-full bg-orange-600 hover:bg-orange-700">
-                        Pay Now
-                      </Button>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -263,34 +211,38 @@ const CustomerDashboard = () => {
               <CardDescription>Your purchase history</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {recentOrders.map((order, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <ShoppingCart className="w-5 h-5 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">{order.shop}</p>
-                        <p className="text-sm text-gray-600">{order.items}</p>
-                        <div className="flex items-center mt-1">
-                          <Clock className="w-3 h-3 text-gray-400 mr-1" />
-                          <span className="text-xs text-gray-500">{order.date}</span>
+              {recentOrders.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No recent orders found.</p>
+              ) : (
+                <div className="space-y-4">
+                  {recentOrders.map((order, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <ShoppingCart className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{order.shop}</p>
+                          <p className="text-sm text-gray-600">{order.items}</p>
+                          <div className="flex items-center mt-1">
+                            <Clock className="w-3 h-3 text-gray-400 mr-1" />
+                            <span className="text-xs text-gray-500">{order.date}</span>
+                          </div>
                         </div>
                       </div>
+                      <div className="text-right">
+                        <p className="font-bold text-gray-900">{order.amount}</p>
+                        <Badge variant={
+                          order.status === 'delivered' ? 'default' :
+                          order.status === 'pending' ? 'secondary' : 'outline'
+                        }>
+                          {order.status}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-gray-900">{order.amount}</p>
-                      <Badge variant={
-                        order.status === 'delivered' ? 'default' :
-                        order.status === 'pending' ? 'secondary' : 'outline'
-                      }>
-                        {order.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
