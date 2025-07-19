@@ -28,6 +28,8 @@ export const SalesManagement = () => {
   const [sales, setSales] = useState<Sale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [ratings, setRatings] = useState<{[key: string]: number}>({});
+  const [comments, setComments] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     if (user?.id) {
@@ -173,8 +175,16 @@ export const SalesManagement = () => {
 
       <div className="grid gap-6">
         {sales.map((sale) => {
-          const [tempRating, setTempRating] = useState(sale.customer_rating || 0);
-          const [tempComment, setTempComment] = useState(sale.rating_comment || '');
+          const currentRating = ratings[sale.id] ?? sale.customer_rating ?? 0;
+          const currentComment = comments[sale.id] ?? sale.rating_comment ?? '';
+
+          const setTempRating = (rating: number) => {
+            setRatings(prev => ({ ...prev, [sale.id]: rating }));
+          };
+
+          const setTempComment = (comment: string) => {
+            setComments(prev => ({ ...prev, [sale.id]: comment }));
+          };
 
           return (
             <Card key={sale.id} className="bg-white/80 backdrop-blur-sm border-green-100">
@@ -231,26 +241,26 @@ export const SalesManagement = () => {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2">
                       <div className="flex gap-1">
-                        {renderStars(tempRating, setTempRating)}
+                        {renderStars(currentRating, setTempRating)}
                       </div>
                       <span className="text-sm text-gray-600">
-                        {tempRating > 0 ? `${tempRating}/5 stars` : 'No rating'}
+                        {currentRating > 0 ? `${currentRating}/5 stars` : 'No rating'}
                       </span>
                     </div>
                     
                     <div>
                       <Textarea
                         placeholder="Add a comment about this customer (optional)"
-                        value={tempComment}
+                        value={currentComment}
                         onChange={(e) => setTempComment(e.target.value)}
                         className="min-h-[60px]"
                       />
                     </div>
 
-                    {(tempRating !== (sale.customer_rating || 0) || tempComment !== (sale.rating_comment || '')) && (
+                    {(currentRating !== (sale.customer_rating || 0) || currentComment !== (sale.rating_comment || '')) && (
                       <Button
-                        onClick={() => updateRating(sale.id, tempRating, tempComment)}
-                        disabled={updatingId === sale.id || tempRating === 0}
+                        onClick={() => updateRating(sale.id, currentRating, currentComment)}
+                        disabled={updatingId === sale.id || currentRating === 0}
                         size="sm"
                         className="bg-green-600 hover:bg-green-700"
                       >
