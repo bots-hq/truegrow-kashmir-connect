@@ -37,15 +37,26 @@ interface CategoryData {
   color: string;
 }
 
+interface ProductSalesData {
+  name: string;
+  totalQuantity: number;
+  totalRevenue: number;
+  averagePrice: number;
+  salesCount: number;
+}
+
 export function Analytics() {
   const { user } = useAuth();
   const [salesData, setSalesData] = useState<SalesData[]>([]);
   const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
+  const [productSalesData, setProductSalesData] = useState<ProductSalesData[]>([]);
   const [stats, setStats] = useState({
     totalRevenue: 0,
     totalCustomers: 0,
     avgOrderValue: 0,
-    growthRate: 0
+    growthRate: 0,
+    totalProducts: 0,
+    totalItemsSold: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -72,16 +83,40 @@ export function Analytics() {
       const processedSalesData = processSalesDataForChart(salesDataRaw || []);
       setSalesData(processedSalesData);
 
+      // Process product sales data
+      const productSales = processProductSalesData(salesDataRaw || []);
+      setProductSalesData(productSales);
+
       // Calculate stats
       const totalRevenue = salesDataRaw?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0;
       const uniqueCustomers = new Set(salesDataRaw?.map(sale => sale.customer_id)).size;
       const avgOrderValue = uniqueCustomers > 0 ? totalRevenue / uniqueCustomers : 0;
+      
+      // Calculate total items sold
+      const totalItemsSold = salesDataRaw?.reduce((sum, sale) => {
+        if (sale.items && Array.isArray(sale.items)) {
+          return sum + sale.items.reduce((itemSum: number, item: any) => itemSum + (item.quantity || 0), 0);
+        }
+        return sum;
+      }, 0) || 0;
+
+      // Get unique product count
+      const uniqueProducts = new Set();
+      salesDataRaw?.forEach(sale => {
+        if (sale.items && Array.isArray(sale.items)) {
+          sale.items.forEach((item: any) => {
+            if (item.name) uniqueProducts.add(item.name.toLowerCase());
+          });
+        }
+      });
 
       setStats({
         totalRevenue,
         totalCustomers: uniqueCustomers,
         avgOrderValue,
-        growthRate: 12.5 // Mock growth rate
+        growthRate: 12.5, // Mock growth rate
+        totalProducts: uniqueProducts.size,
+        totalItemsSold
       });
 
       // Process category data
@@ -135,6 +170,38 @@ export function Analytics() {
     }));
   };
 
+  const processProductSalesData = (data: any[]): ProductSalesData[] => {
+    const productStats: { [key: string]: { quantity: number; revenue: number; prices: number[]; sales: number } } = {};
+    
+    data.forEach(sale => {
+      if (sale.items && Array.isArray(sale.items)) {
+        sale.items.forEach((item: any) => {
+          const name = item.name || 'Unknown Product';
+          if (!productStats[name]) {
+            productStats[name] = { quantity: 0, revenue: 0, prices: [], sales: 0 };
+          }
+          
+          productStats[name].quantity += item.quantity || 0;
+          productStats[name].revenue += item.total || 0;
+          productStats[name].prices.push(item.price || 0);
+          productStats[name].sales += 1;
+        });
+      }
+    });
+
+    return Object.entries(productStats)
+      .map(([name, stats]) => ({
+        name,
+        totalQuantity: stats.quantity,
+        totalRevenue: stats.revenue,
+        averagePrice: stats.prices.length > 0 
+          ? stats.prices.reduce((sum, price) => sum + price, 0) / stats.prices.length 
+          : 0,
+        salesCount: stats.sales
+      }))
+      .sort((a, b) => b.totalRevenue - a.totalRevenue); // Sort by revenue desc
+  };
+
   const StatCard = ({ title, value, icon: Icon, trend, color }: any) => (
     <Card>
       <CardContent className="p-6">
@@ -167,7 +234,7 @@ export function Analytics() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <StatCard
           title="Total Revenue"
           value={`₹${stats.totalRevenue.toLocaleString()}`}
@@ -194,6 +261,18 @@ export function Analytics() {
           value={`${stats.growthRate}%`}
           icon={TrendingUp}
           color="text-orange-500"
+        />
+        <StatCard
+          title="Total Products"
+          value={stats.totalProducts}
+          icon={Package}
+          color="text-indigo-500"
+        />
+        <StatCard
+          title="Items Sold"
+          value={stats.totalItemsSold}
+          icon={Package}
+          color="text-pink-500"
         />
       </div>
 
@@ -301,6 +380,123 @@ export function Analytics() {
               <span className="font-medium">Profit Margin</span>
               <span className="text-orange-600 font-bold">24%</span>
             </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Product Analytics Section */}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Product Analytics</h2>
+            <p className="text-gray-600">Detailed insights into individual product performance</p>
+          </div>
+        </div>
+
+        {/* Top Products Bar Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Products by Revenue</CardTitle>
+            <CardDescription>Best performing products based on total revenue generated</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={productSalesData.slice(0, 10)} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="name" width={100} />
+                <Tooltip 
+                  formatter={(value: any) => [`₹${value}`, 'Revenue']}
+                  labelFormatter={(label) => `Product: ${label}`}
+                />
+                <Bar dataKey="totalRevenue" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Product Details Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Product Sales Details</CardTitle>
+            <CardDescription>Complete breakdown of all product sales and performance</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {productSalesData.length === 0 ? (
+              <div className="text-center py-8">
+                <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg">No product sales found</p>
+                <p className="text-gray-400 text-sm">Start making sales to see product analytics here</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="border-b bg-gray-50">
+                      <th className="text-left p-4 font-semibold">Product Name</th>
+                      <th className="text-center p-4 font-semibold">Total Quantity</th>
+                      <th className="text-center p-4 font-semibold">Total Revenue</th>
+                      <th className="text-center p-4 font-semibold">Average Price</th>
+                      <th className="text-center p-4 font-semibold">Sales Count</th>
+                      <th className="text-center p-4 font-semibold">Revenue per Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {productSalesData.map((product, index) => (
+                      <tr key={product.name} className="border-b hover:bg-gray-50">
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                              <Package className="w-4 h-4 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{product.name}</p>
+                              <p className="text-sm text-gray-500">Rank #{index + 1}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="text-center p-4 font-medium">{product.totalQuantity}</td>
+                        <td className="text-center p-4 font-medium text-green-600">
+                          ₹{product.totalRevenue.toLocaleString()}
+                        </td>
+                        <td className="text-center p-4">₹{Math.round(product.averagePrice).toLocaleString()}</td>
+                        <td className="text-center p-4">{product.salesCount}</td>
+                        <td className="text-center p-4 font-medium text-blue-600">
+                          ₹{Math.round(product.totalRevenue / product.totalQuantity).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Product Quantity Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Product Quantity Sold</CardTitle>
+            <CardDescription>Total quantities sold for each product</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={productSalesData.slice(0, 10)}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="name" 
+                  angle={-45}
+                  textAnchor="end"
+                  height={100}
+                />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value: any) => [value, 'Quantity Sold']}
+                  labelFormatter={(label) => `Product: ${label}`}
+                />
+                <Bar dataKey="totalQuantity" fill="#82ca9d" />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
