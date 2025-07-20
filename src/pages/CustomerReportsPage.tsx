@@ -1,6 +1,6 @@
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { CustomerDetails } from "@/components/CustomerDetails";
+import { CustomerList } from "@/components/CustomerList";
 
 export default function CustomerReportsPage() {
   return (
@@ -12,7 +12,7 @@ export default function CustomerReportsPage() {
           <div className="flex items-center mb-6">
             <SidebarTrigger />
           </div>
-          <CustomerDetails />
+          <CustomerList />
         </div>
       </div>
     </SidebarProvider>
