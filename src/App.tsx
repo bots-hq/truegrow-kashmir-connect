@@ -12,7 +12,12 @@ import RegisterShopOwner from "./pages/RegisterShopOwner";
 import RegisterCustomer from "./pages/RegisterCustomer";
 import ShopOwnerDashboard from "./pages/ShopOwnerDashboard";
 import CustomerDashboard from "./pages/CustomerDashboard";
-import CommunityFeed from "./pages/CommunityFeed";
+import StockManagementPage from "./pages/StockManagementPage";
+import PaymentTrackingPage from "./pages/PaymentTrackingPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
+import NotesPage from "./pages/NotesPage";
+import BillingPage from "./pages/BillingPage";
+import CustomerReportsPage from "./pages/CustomerReportsPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -41,7 +46,36 @@ const App = () => (
                 <CustomerDashboard />
               </ProtectedRoute>
             } />
-            <Route path="/community" element={<CommunityFeed />} />
+            <Route path="/billing" element={
+              <ProtectedRoute requiredRole="shop_owner">
+                <BillingPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/stock" element={
+              <ProtectedRoute requiredRole="shop_owner">
+                <StockManagementPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/payments" element={
+              <ProtectedRoute requiredRole="shop_owner">
+                <PaymentTrackingPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/customers" element={
+              <ProtectedRoute requiredRole="shop_owner">
+                <CustomerReportsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/analytics" element={
+              <ProtectedRoute requiredRole="shop_owner">
+                <AnalyticsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/notes" element={
+              <ProtectedRoute requiredRole="shop_owner">
+                <NotesPage />
+              </ProtectedRoute>
+            } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
