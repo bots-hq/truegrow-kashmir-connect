@@ -31,6 +31,7 @@ interface Sale {
 interface SaleItem {
   name: string;
   quantity: number;
+  unit?: string;
   price: number;
   total: number;
 }
@@ -173,7 +174,7 @@ export const SalesManagement = () => {
   };
 
   const addItem = (saleId: string) => {
-    const newItem: SaleItem = { name: '', quantity: 1, price: 0, total: 0 };
+    const newItem: SaleItem = { name: '', quantity: 1, unit: 'Package', price: 0, total: 0 };
     setEditedItems(prev => ({
       ...prev,
       [saleId]: [...(prev[saleId] || []), newItem]
@@ -312,7 +313,7 @@ export const SalesManagement = () => {
       const tableData = items.map((item: SaleItem, index: number) => [
         (index + 1).toString(),
         item.name,
-        item.quantity.toString(),
+        `${item.quantity} ${item.unit || 'pcs'}`,
         '₹' + item.price.toFixed(2),
         '₹' + item.total.toFixed(2)
       ]);
@@ -320,7 +321,7 @@ export const SalesManagement = () => {
       // Create table using autoTable
       autoTable(doc, {
         startY: tableStartY,
-        head: [['#', 'Item', 'Qty', 'Price', 'Total']],
+        head: [['#', 'Item', 'Qty & Unit', 'Price', 'Total']],
         body: tableData,
         styles: { 
           fontSize: 10,
@@ -444,11 +445,11 @@ export const SalesManagement = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-2">Sales Management</h2>
+        <h2 className="text-xl sm:text-2xl font-bold mb-2">Sales Management</h2>
         <p className="text-gray-600">Manage payment status and rate customers</p>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid gap-4 sm:gap-6">
         {sales.map((sale) => {
           const currentRating = ratings[sale.id] ?? sale.customer_rating ?? 0;
           const currentComment = comments[sale.id] ?? sale.rating_comment ?? '';
@@ -622,8 +623,8 @@ export const SalesManagement = () => {
                     {items.map((item: SaleItem, index: number) => (
                       <div key={index} className="bg-gray-50 rounded-lg p-3">
                         {isEditing ? (
-                          <div className="grid grid-cols-12 gap-2 items-center">
-                            <div className="col-span-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                            <div className="sm:col-span-3">
                               <Input
                                 placeholder="Item name"
                                 value={item.name}
@@ -631,7 +632,7 @@ export const SalesManagement = () => {
                                 className="h-8"
                               />
                             </div>
-                            <div className="col-span-2">
+                            <div className="sm:col-span-2">
                               <Input
                                 type="number"
                                 placeholder="Qty"
@@ -640,7 +641,25 @@ export const SalesManagement = () => {
                                 className="h-8"
                               />
                             </div>
-                            <div className="col-span-2">
+                            <div className="sm:col-span-2">
+                              <Select 
+                                value={item.unit || 'Package'} 
+                                onValueChange={(value) => updateItem(sale.id, index, 'unit', value)}
+                              >
+                                <SelectTrigger className="h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Package">Package</SelectItem>
+                                  <SelectItem value="Bottle">Bottle</SelectItem>
+                                  <SelectItem value="KGs">KGs</SelectItem>
+                                  <SelectItem value="Ltrs">Ltrs</SelectItem>
+                                  <SelectItem value="Pieces">Pieces</SelectItem>
+                                  <SelectItem value="Boxes">Boxes</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="sm:col-span-2">
                               <Input
                                 type="number"
                                 placeholder="Price"
@@ -649,10 +668,10 @@ export const SalesManagement = () => {
                                 className="h-8"
                               />
                             </div>
-                            <div className="col-span-2">
+                            <div className="sm:col-span-2">
                               <span className="text-sm font-medium">₹{item.total.toFixed(2)}</span>
                             </div>
-                            <div className="col-span-2">
+                            <div className="sm:col-span-1">
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -665,7 +684,7 @@ export const SalesManagement = () => {
                           </div>
                         ) : (
                           <div className="flex justify-between text-sm">
-                            <span>{item.name} (x{item.quantity})</span>
+                            <span>{item.name} ({item.quantity} {item.unit || 'pcs'})</span>
                             <span>₹{item.total.toFixed(2)}</span>
                           </div>
                         )}

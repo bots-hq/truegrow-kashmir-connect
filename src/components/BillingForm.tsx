@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Plus, FileDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +14,7 @@ import autoTable from 'jspdf-autotable';
 interface BillingItem {
   name: string;
   quantity: number;
+  unit: string;
   price: number;
   total: number;
 }
@@ -22,12 +24,12 @@ export const BillingForm = () => {
   const { toast } = useToast();
   const [customerId, setCustomerId] = useState("");
   const [items, setItems] = useState<BillingItem[]>([
-    { name: "", quantity: 1, price: 0, total: 0 }
+    { name: "", quantity: 1, unit: "Package", price: 0, total: 0 }
   ]);
   const [isLoading, setIsLoading] = useState(false);
 
   const addItem = () => {
-    setItems([...items, { name: "", quantity: 1, price: 0, total: 0 }]);
+    setItems([...items, { name: "", quantity: 1, unit: "Package", price: 0, total: 0 }]);
   };
 
   const removeItem = (index: number) => {
@@ -79,14 +81,14 @@ export const BillingForm = () => {
     // Items table
     const tableData = items.map(item => [
       item.name,
-      item.quantity.toString(),
+      `${item.quantity} ${item.unit}`,
       `₹${item.price.toFixed(2)}`,
       `₹${item.total.toFixed(2)}`
     ]);
 
     autoTable(doc, {
       startY: 80,
-      head: [['Item', 'Quantity', 'Price', 'Total']],
+      head: [['Item', 'Qty & Unit', 'Price', 'Total']],
       body: tableData,
     });
 
@@ -201,7 +203,7 @@ export const BillingForm = () => {
 
       // Reset form
       setCustomerId("");
-      setItems([{ name: "", quantity: 1, price: 0, total: 0 }]);
+      setItems([{ name: "", quantity: 1, unit: "Package", price: 0, total: 0 }]);
 
     } catch (error) {
       console.error('Error saving sale:', error);
@@ -252,8 +254,8 @@ export const BillingForm = () => {
 
           <div className="space-y-4">
             {items.map((item, index) => (
-              <div key={index} className="grid grid-cols-12 gap-4 p-4 border rounded-lg">
-                <div className="col-span-5">
+              <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-4 p-4 border rounded-lg">
+                <div className="sm:col-span-4">
                   <Label>Item Name</Label>
                   <Input
                     placeholder="Enter item name"
@@ -261,7 +263,7 @@ export const BillingForm = () => {
                     onChange={(e) => updateItem(index, 'name', e.target.value)}
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <Label>Quantity</Label>
                   <Input
                     type="number"
@@ -270,7 +272,26 @@ export const BillingForm = () => {
                     onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 1)}
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
+                  <Label>Unit</Label>
+                  <Select 
+                    value={item.unit} 
+                    onValueChange={(value) => updateItem(index, 'unit', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Package">Package</SelectItem>
+                      <SelectItem value="Bottle">Bottle</SelectItem>
+                      <SelectItem value="KGs">KGs</SelectItem>
+                      <SelectItem value="Ltrs">Ltrs</SelectItem>
+                      <SelectItem value="Pieces">Pieces</SelectItem>
+                      <SelectItem value="Boxes">Boxes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="sm:col-span-2">
                   <Label>Price (₹)</Label>
                   <Input
                     type="number"
@@ -280,7 +301,7 @@ export const BillingForm = () => {
                     onChange={(e) => updateItem(index, 'price', parseFloat(e.target.value) || 0)}
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="sm:col-span-1 sm:col-start-11">
                   <Label>Total (₹)</Label>
                   <Input
                     value={item.total.toFixed(2)}
@@ -288,13 +309,14 @@ export const BillingForm = () => {
                     className="bg-gray-50"
                   />
                 </div>
-                <div className="col-span-1 flex items-end">
+                <div className="sm:col-span-1 flex items-end">
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => removeItem(index)}
                     disabled={items.length === 1}
+                    className="w-full sm:w-auto"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

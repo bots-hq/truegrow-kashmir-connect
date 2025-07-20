@@ -109,12 +109,12 @@ const ShopOwnerDashboard = () => {
       <div className="min-h-screen flex w-full bg-gradient-to-br from-green-50 via-white to-emerald-50">
         <AppSidebar userRole="shop-owner" />
         
-        <div className="flex-1 p-6 overflow-auto">
-          <div className="flex items-center justify-between mb-8">
+        <div className="flex-1 p-4 sm:p-6 overflow-auto">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4">
             <div className="flex items-center space-x-4">
               <SidebarTrigger />
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
                   {profile?.business_name || 'Shop Owner Dashboard'}
                 </h1>
                 <p className="text-gray-600">
@@ -123,43 +123,51 @@ const ShopOwnerDashboard = () => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-2">
-              <div className="flex space-x-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button 
                   variant={activeTab === "dashboard" ? "default" : "outline"}
                   onClick={() => setActiveTab("dashboard")}
+                  size="sm"
+                  className="text-xs sm:text-sm"
                 >
                   Dashboard
                 </Button>
                 <Button 
                   variant={activeTab === "billing" ? "default" : "outline"}
                   onClick={() => setActiveTab("billing")}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"
                 >
-                  <FileText className="w-4 h-4 mr-2" />
-                  New Sale
+                  <FileText className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">New Sale</span>
                 </Button>
                 <Button 
                   variant={activeTab === "manage" ? "default" : "outline"}
                   onClick={() => setActiveTab("manage")}
+                  size="sm"
+                  className="text-xs sm:text-sm"
                 >
-                  <Star className="w-4 h-4 mr-2" />
-                  Manage Sales
+                  <Star className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Manage</span>
                 </Button>
                 <Button 
                   variant={activeTab === "customers" ? "default" : "outline"}
                   onClick={() => setActiveTab("customers")}
+                  size="sm"
+                  className="text-xs sm:text-sm"
                 >
-                  <Users className="w-4 h-4 mr-2" />
-                  Customer Details
+                  <Users className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Customers</span>
                 </Button>
               </div>
               <Button 
                 onClick={handleSignOut}
                 variant="outline" 
-                className="border-red-200 text-red-600 hover:bg-red-50"
+                size="sm"
+                className="border-red-200 text-red-600 hover:bg-red-50 text-xs sm:text-sm mt-2 sm:mt-0"
               >
-                <LogOut className="w-4 h-4 mr-2" />
+                <LogOut className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-2" />
                 Sign Out
               </Button>
             </div>

@@ -59,10 +59,17 @@ export const CustomerDetails = () => {
         .from('profiles')
         .select('customer_id, full_name, phone, created_at')
         .eq('customer_id', searchQuery.trim().toUpperCase())
-        .single();
+        .maybeSingle();
 
-      if (profileError || !profileData) {
-        setError("Customer not found");
+      if (profileError) {
+        console.error('Database error:', profileError);
+        setError(`Error searching customer: ${profileError.message}`);
+        setLoading(false);
+        return;
+      }
+
+      if (!profileData) {
+        setError(`Customer ID ${searchQuery.trim().toUpperCase()} not found`);
         setLoading(false);
         return;
       }
@@ -170,7 +177,7 @@ export const CustomerDetails = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div>
                   <p className="text-sm text-gray-600">Name</p>
                   <p className="font-semibold">{customerInfo.full_name}</p>
@@ -194,7 +201,7 @@ export const CustomerDetails = () => {
           </Card>
 
           {/* Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="bg-white/80 backdrop-blur-sm border-green-100">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-2">
@@ -290,7 +297,7 @@ export const CustomerDetails = () => {
                       {sale.items && Array.isArray(sale.items) && sale.items.length > 0 && (
                         <div className="mt-3">
                           <p className="text-sm font-medium text-gray-700 mb-2">Items:</p>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                             {sale.items.map((item: any, index: number) => (
                               <div key={index} className="text-xs bg-white p-2 rounded border">
                                 <span className="font-medium">{item.name}</span>
