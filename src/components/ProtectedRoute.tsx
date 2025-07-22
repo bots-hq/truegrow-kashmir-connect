@@ -17,14 +17,34 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
       navigate('/auth');
     }
     
-    if (!loading && user && profile && requiredRole && profile.role !== requiredRole) {
-      // Redirect users to their appropriate dashboard based on their role
-      if (profile.role === 'shop_owner') {
-        navigate('/dashboard/shop-owner');
-      } else if (profile.role === 'customer') {
-        navigate('/dashboard/customer');
+    if (!loading && user && requiredRole) {
+      // Wait a bit for profile to load if it's not loaded yet
+      const checkProfile = () => {
+        if (profile) {
+          if (profile.role !== requiredRole) {
+            // Redirect users to their appropriate dashboard based on their role
+            if (profile.role === 'shop_owner') {
+              navigate('/dashboard/shop-owner');
+            } else if (profile.role === 'customer') {
+              navigate('/dashboard/customer');
+            } else {
+              navigate('/');
+            }
+          }
+        } else if (!loading) {
+          // Profile failed to load, redirect to auth
+          console.error('Profile failed to load for authenticated user');
+          navigate('/auth');
+        }
+      };
+
+      // If profile is already loaded, check immediately
+      if (profile) {
+        checkProfile();
       } else {
-        navigate('/');
+        // Wait a bit for profile to load
+        const timeout = setTimeout(checkProfile, 1000);
+        return () => clearTimeout(timeout);
       }
     }
   }, [user, profile, loading, navigate, requiredRole]);

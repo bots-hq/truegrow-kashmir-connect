@@ -45,17 +45,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 .eq('user_id', session.user.id)
                 .maybeSingle();
               
-              if (!error && profileData) {
+              if (error) {
+                console.error('Error fetching profile:', error);
+                setProfile(null);
+              } else if (profileData) {
+                console.log('Profile loaded:', profileData);
                 setProfile(profileData);
               } else {
-                console.log('Profile not found or error:', error);
+                console.log('No profile found for user:', session.user.id);
                 setProfile(null);
               }
             } catch (err) {
               console.error('Error fetching profile:', err);
               setProfile(null);
             }
-          }, 0);
+          }, 100);
         } else {
           setProfile(null);
         }
@@ -78,17 +82,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               .eq('user_id', session.user.id)
               .maybeSingle();
             
-            if (!error && profileData) {
+            if (error) {
+              console.error('Error fetching profile:', error);
+              setProfile(null);
+            } else if (profileData) {
+              console.log('Profile loaded:', profileData);
               setProfile(profileData);
             } else {
-              console.log('Profile not found or error:', error);
+              console.log('No profile found for user:', session.user.id);
               setProfile(null);
             }
           } catch (err) {
             console.error('Error fetching profile:', err);
             setProfile(null);
           }
-        }, 0);
+        }, 100);
       }
       
       setLoading(false);

@@ -25,7 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const CustomerDashboard = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const { toast } = useToast();
   
   // State for real data
@@ -44,15 +44,16 @@ const CustomerDashboard = () => {
 
   // Fetch customer's sales data
   useEffect(() => {
-    if (profile) {
-      if (profile.customer_id) {
+    if (!authLoading) {
+      if (profile?.customer_id) {
         fetchCustomerData();
       } else {
-        // Profile exists but no customer_id, stop loading
+        // Profile loaded but no customer_id, stop loading
         setLoading(false);
+        console.log('Profile loaded but no customer_id:', profile);
       }
     }
-  }, [profile]);
+  }, [profile, authLoading]);
 
   const fetchCustomerData = async () => {
     if (!profile?.customer_id) return;
@@ -197,7 +198,7 @@ const CustomerDashboard = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold mb-2">
-                    {loading ? 'Loading...' : (profile?.customer_id || 'Not generated')}
+                    {authLoading || loading ? 'Loading...' : (profile?.customer_id || 'Not Available')}
                   </p>
                   <Button 
                     onClick={copyCustomerId} 
