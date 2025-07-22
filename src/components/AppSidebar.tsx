@@ -15,7 +15,8 @@ import {
   Settings,
   LogOut
 } from "lucide-react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Sidebar,
   SidebarContent,
@@ -39,8 +40,15 @@ interface AppSidebarProps {
 export function AppSidebar({ userRole }: AppSidebarProps) {
   const { state } = useSidebar();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
   const currentPath = location.pathname;
   const isCollapsed = state === "collapsed";
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
   const shopOwnerItems = [
     { title: "Dashboard", url: "/dashboard/shop-owner", icon: Home },
@@ -120,7 +128,11 @@ export function AppSidebar({ userRole }: AppSidebarProps) {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
-              <Button variant="ghost" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50">
+              <Button 
+                variant="ghost" 
+                className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={handleSignOut}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 {!isCollapsed && <span>Logout</span>}
               </Button>
