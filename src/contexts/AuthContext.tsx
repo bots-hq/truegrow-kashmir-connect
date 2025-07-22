@@ -28,6 +28,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchProfile = async (userId: string, retryCount = 0) => {
+    try {
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        setProfile(null);
+      } else if (profileData) {
+        console.log('Profile loaded:', profileData);
+        setProfile(profileData);
+      } else {
+        console.log('No profile found for user:', userId);
+        // If no profile found and this is a new attempt, retry a few times
+        if (retryCount < 3) {
+          console.log(`Retrying profile fetch in 1 second (attempt ${retryCount + 1}/3)`);
+          setTimeout(() => fetchProfile(userId, retryCount + 1), 1000);
+        } else {
+          setProfile(null);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      setProfile(null);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -37,29 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Fetch profile data when user logs in
         if (session?.user) {
-          setTimeout(async () => {
-            try {
-              const { data: profileData, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
-              
-              if (error) {
-                console.error('Error fetching profile:', error);
-                setProfile(null);
-              } else if (profileData) {
-                console.log('Profile loaded:', profileData);
-                setProfile(profileData);
-              } else {
-                console.log('No profile found for user:', session.user.id);
-                setProfile(null);
-              }
-            } catch (err) {
-              console.error('Error fetching profile:', err);
-              setProfile(null);
-            }
-          }, 100);
+          setTimeout(() => fetchProfile(session.user.id), 100);
         } else {
           setProfile(null);
         }
@@ -74,29 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        setTimeout(async () => {
-          try {
-            const { data: profileData, error } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .maybeSingle();
-            
-            if (error) {
-              console.error('Error fetching profile:', error);
-              setProfile(null);
-            } else if (profileData) {
-              console.log('Profile loaded:', profileData);
-              setProfile(profileData);
-            } else {
-              console.log('No profile found for user:', session.user.id);
-              setProfile(null);
-            }
-          } catch (err) {
-            console.error('Error fetching profile:', err);
-            setProfile(null);
-          }
-        }, 100);
+        setTimeout(() => fetchProfile(session.user.id), 100);
       }
       
       setLoading(false);

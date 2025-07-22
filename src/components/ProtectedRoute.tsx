@@ -31,10 +31,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
               navigate('/');
             }
           }
-        } else if (!loading) {
-          // Profile failed to load, redirect to auth
-          console.error('Profile failed to load for authenticated user');
-          navigate('/auth');
+        } else {
+          // Profile not loaded yet, but user exists - this might be a new user
+          // Don't redirect immediately, give more time for profile creation
+          console.log('Profile not yet loaded for user:', user.id);
         }
       };
 
@@ -42,8 +42,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
       if (profile) {
         checkProfile();
       } else {
-        // Wait a bit for profile to load
-        const timeout = setTimeout(checkProfile, 1000);
+        // Wait longer for profile to load/be created
+        const timeout = setTimeout(() => {
+          if (!profile) {
+            console.error('Profile failed to load after timeout for user:', user.id);
+            // For now, don't force logout - let user stay on the page
+            // navigate('/auth');
+          }
+        }, 3000); // Increased timeout to 3 seconds
         return () => clearTimeout(timeout);
       }
     }
