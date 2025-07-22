@@ -44,10 +44,15 @@ const CustomerDashboard = () => {
 
   // Fetch customer's sales data
   useEffect(() => {
-    if (profile?.customer_id) {
-      fetchCustomerData();
+    if (profile) {
+      if (profile.customer_id) {
+        fetchCustomerData();
+      } else {
+        // Profile exists but no customer_id, stop loading
+        setLoading(false);
+      }
     }
-  }, [profile?.customer_id]);
+  }, [profile]);
 
   const fetchCustomerData = async () => {
     if (!profile?.customer_id) return;
@@ -192,7 +197,7 @@ const CustomerDashboard = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold mb-2">
-                    {profile?.customer_id || 'Loading...'}
+                    {loading ? 'Loading...' : (profile?.customer_id || 'Not generated')}
                   </p>
                   <Button 
                     onClick={copyCustomerId} 
